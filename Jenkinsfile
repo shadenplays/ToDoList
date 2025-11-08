@@ -15,9 +15,18 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         bat """
+          echo "Setting up npm cache..."
           if not exist "${env.NPM_CONFIG_CACHE}" mkdir "${env.NPM_CONFIG_CACHE}"
           npm config set cache "${env.NPM_CONFIG_CACHE}"
+
+          echo "Installing dependencies..."
           npm install
+          if %ERRORLEVEL% NEQ 0 (
+            echo "npm install failed, trying with --force..."
+            npm install --force
+          )
+
+          echo "Installing electron-vite..."
           npm install electron-vite --save-dev
         """
       }
@@ -25,7 +34,14 @@ pipeline {
 
     stage('Verify Installation') {
       steps {
-        bat 'npm list electron-vite || echo "electron-vite not found"'
+        bat """
+          echo "Checking installed dependencies..."
+          npm list electron-vite
+          echo "Current directory:"
+          dir
+          echo "Package.json contents:"
+          type package.json
+        """
       }
     }
 
