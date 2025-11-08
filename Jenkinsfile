@@ -38,7 +38,7 @@ pipeline {
       steps {
         script {
           // Use npx to ensure local electron-builder is found
-                    bat 'npx electron-vite build'
+                    bat 'npm electron-vite build'
                 }
             }
         }
