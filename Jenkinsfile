@@ -51,16 +51,11 @@ pipeline {
       steps {
         echo "Collecting prod server stats..."
 
-                // CPU usage
-                bat 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage | Out-String"'
-
-                // Memory usage
-                bat 'powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize | Out-String"'
-
-                // Disk usage
-                bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size | Out-String"'
-            }
-        }
+        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage | Out-String"'
+        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize | Out-String"'
+        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size | Out-String"'
+    }
+}
     }
 
     post {
