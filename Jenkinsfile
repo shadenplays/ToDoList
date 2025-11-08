@@ -41,15 +41,16 @@ pipeline {
         }
 
         // ✅ Put it here, inside stages
-        stage('Prod Server Instrumentation') {
+       stage('Prod Server Instrumentation') {
       steps {
         echo "Collecting prod server stats..."
-                bat 'wmic cpu get loadpercentage'
-                bat 'wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /Value'
-                bat 'wmic logicaldisk get size,freespace,caption'
-            }
-        }
+
+        // Use full PowerShell path
+        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
+        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
+        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
     }
+}
 
     post {
     success {
@@ -59,4 +60,5 @@ pipeline {
       echo "❌ Build failed!"
         }
     }
+}
 }
