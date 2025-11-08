@@ -22,13 +22,18 @@ pipeline {
 
         stage('Test') {
             steps {
-                echo 'Running tests (none yet)...'
+                echo 'Running tests...'
+                bat 'npm run test -- --reporter=junit --outputFile=test-results/results.xml'
+            }
+            post {
+                always {
+                    junit 'test-results/results.xml'
+                }
             }
         }
 
         stage('Archive Build') {
             steps {
-                // Change this line to match your actual build output directory
                 archiveArtifacts 'out/**/*'
             }
         }
