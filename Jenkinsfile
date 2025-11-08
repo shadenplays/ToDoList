@@ -1,90 +1,57 @@
 pipeline {
   agent any
 
-  environment {
-    NPM_CONFIG_CACHE = "${WORKSPACE}\\.npm_cache"
-  }
+    environment {
+    // Use a local npm cache to avoid permission issues on Windows Jenkins
+        NPM_CONFIG_CACHE = "${WORKSPACE}\\.npm_cache"
+    }
 
-  stages {
+    stages {
     stage('Checkout') {
       steps {
         git branch: 'main', url: 'https://github.com/shadenplays/ToDoList.git'
-      }
-    }
+            }
+        }
 
-    stage('Install Dependencies') {
+        stage('Install Dependencies') {
       steps {
-        bat """
-          echo "Setting up npm cache..."
-          if not exist "${env.NPM_CONFIG_CACHE}" mkdir "${env.NPM_CONFIG_CACHE}"
-          npm config set cache "${env.NPM_CONFIG_CACHE}"
+        // Create local npm cache folder and install dependencies
+                bat """
+                    if not exist "${env.NPM_CONFIG_CACHE}" mkdir "${env.NPM_CONFIG_CACHE}"
+                    npm config set cache "${env.NPM_CONFIG_CACHE}"
+                    npm install
+                """
+            }
+        }
 
-          echo "Installing dependencies..."
-          npm install
-          if %ERRORLEVEL% NEQ 0 (
-            echo "npm install failed, trying with --force..."
-            npm install --force
-          )
-
-          echo "Installing electron-vite..."
-          npm install electron-vite --save-dev
-        """
-      }
-    }
-
-    stage('Verify Installation') {
+        stage('Build') {
       steps {
-        bat """
-          echo "Checking installed dependencies..."
-          npm list electron-vite
-          echo "Current directory:"
-          dir
-          echo "Package.json contents:"
-          type package.json
-        """
-      }
-    }
+        // Build Electron Vite app
+                bat 'npx electron-vite build'
+            }
+        }
 
-    stage('Build') {
-      steps {
-        bat 'npx electron-vite build'
-      }
-    }
-
-    stage('Test') {
+        stage('Test') {
       steps {
         echo "Running tests (none yet)..."
-      }
-    }
+                // Add future test commands here
+            }
+        }
 
-    stage('Archive Build') {
+        stage('Archive Build') {
       steps {
-        archiveArtifacts artifacts: 'out/**/*', allowEmptyArchive: false
-      }
+        // Archive all build outputs from 'out' folder
+                archiveArtifacts artifacts: 'out/**/*', allowEmptyArchive: false
+            }
+        }
     }
 
-    stage('Prod Server Instrumentation') {
-      steps {
-        echo "Collecting prod server stats..."
-
-        // CPU usage
-        bat 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
-
-        // Memory usage
-        bat 'powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
-
-        // Disk usage
-        bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
-      }
-    }
-  }
-
-  post {
+    post {
     success {
       echo "✔ Build successful!"
-    }
-    failure {
+        }
+        failure {
       echo "❌ Build failed!"
+        }
     }
-  }
 }
