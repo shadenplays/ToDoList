@@ -41,7 +41,7 @@ pipeline {
         }
 
         // ✅ Put it here, inside stages
-       stage('Prod Server Instrumentation') {
+        stage('Prod Server Instrumentation') {
       steps {
         echo "Collecting prod server stats..."
 
@@ -51,6 +51,7 @@ pipeline {
         bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
     }
 }
+
 
     post {
     success {
