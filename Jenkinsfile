@@ -1,47 +1,53 @@
 pipeline {
   agent any
 
-    environment {
+  environment {
     NPM_CONFIG_CACHE = "${WORKSPACE}\\.npm_cache"
-    }
+  }
 
-    stages {
+  stages {
     stage('Checkout') {
       steps {
         git branch: 'main', url: 'https://github.com/shadenplays/ToDoList.git'
-            }
-        }
+      }
+    }
 
-        stage('Install Dependencies') {
+    stage('Install Dependencies') {
       steps {
         bat """
-                if not exist "${env.NPM_CONFIG_CACHE}" mkdir "${env.NPM_CONFIG_CACHE}"
-                npm config set cache "${env.NPM_CONFIG_CACHE}"
-                npm install
-                """
-            }
-        }
+          if not exist "${env.NPM_CONFIG_CACHE}" mkdir "${env.NPM_CONFIG_CACHE}"
+          npm config set cache "${env.NPM_CONFIG_CACHE}"
+          npm install
+          npm install electron-vite --save-dev
+        """
+      }
+    }
 
-        stage('Build') {
+    stage('Verify Installation') {
+      steps {
+        bat 'npm list electron-vite || echo "electron-vite not found"'
+      }
+    }
+
+    stage('Build') {
       steps {
         bat 'npx electron-vite build'
-            }
-        }
+      }
+    }
 
-        stage('Test') {
+    stage('Test') {
       steps {
         echo "Running tests (none yet)..."
-            }
-        }
+      }
+    }
 
-        stage('Archive Build') {
+    stage('Archive Build') {
       steps {
         archiveArtifacts artifacts: 'out/**/*', allowEmptyArchive: false
-            }
-        }
+      }
+    }
 
-        // ✅ Put it here, inside stages
-        stage('Prod Server Instrumentation') {
+    stage('Prod Server Instrumentation') {
       steps {
         echo "Collecting prod server stats..."
 
@@ -53,17 +59,16 @@ pipeline {
 
         // Disk usage
         bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
+      }
     }
-}
-    }
+  }
 
-    post {
+  post {
     success {
       echo "✔ Build successful!"
-        }
-        failure {
-      echo "❌ Build failed!"
-        }
     }
+    failure {
+      echo "❌ Build failed!"
+    }
+  }
 }
-
