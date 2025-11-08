@@ -1,10 +1,6 @@
 pipeline {
   agent any
 
-    environment {
-    CI = 'true'
-    }
-
     stages {
     stage('Checkout') {
       steps {
@@ -18,7 +14,7 @@ pipeline {
                     echo Installing dependencies...
                     if not exist ".npm_cache" mkdir ".npm_cache"
                     npm config set cache ".npm_cache"
-                    npm ci || npm install
+                    npm install
                 '''
             }
         }
@@ -27,53 +23,44 @@ pipeline {
       steps {
         bat '''
                     echo Building Electron app...
-                    npx electron-vite build
+                    npm run build
                 '''
             }
         }
 
         stage('Test') {
       steps {
-        echo 'Running tests (none yet)...'
+        bat '''
+                    echo Running tests...
+                    npm test || echo "No tests defined"
+                '''
             }
         }
 
-        stage('Archive Build') {
+        stage('Archive Artifacts') {
       steps {
-        archiveArtifacts artifacts: 'out/**/*', fingerprint: true
+        archiveArtifacts artifacts: 'dist/**/*', fingerprint: true
             }
         }
 
         stage('Prod Server Instrumentation') {
       steps {
-        echo 'Collecting prod server stats...'
-                bat 'powershell -Command "Get-CimInstance Win32_Processor | Select LoadPercentage"'
-                bat 'powershell -Command "Get-CimInstance Win32_OperatingSystem | Select FreePhysicalMemory,TotalVisibleMemorySize"'
-                bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select DeviceID,FreeSpace,Size"'
-            }
-        }
-
-        stage('Deploy to Prod') {
-      steps {
-        echo 'Deploying app to production...'
-                bat 'powershell -Command "if (-not (Test-Path C:\\prod_app)) { New-Item -ItemType Directory -Path C:\\prod_app }"'
-                bat 'powershell -Command "Copy-Item -Path out\\* -Destination C:\\prod_app\\ -Recurse -Force"'
-            }
-        }
-
-        stage('Verify Deployment') {
-      steps {
-        echo '✅ Deployment verification complete!'
+        bat '''
+                    echo Gathering system metrics...
+                    wmic cpu get loadpercentage
+                    wmic os get freephysicalmemory,totalvisiblememorysize
+                    wmic logicaldisk get size,freespace,caption
+                '''
             }
         }
     }
 
     post {
     success {
-      echo '✅ Build succeeded!'
+      echo '✅ Build and instrumentation completed successfully!'
         }
         failure {
-      echo '❌ Build failed!'
+      echo '❌ Build failed. Check logs above.'
         }
     }
 }
