@@ -2,23 +2,21 @@ pipeline {
   agent any
 
     environment {
-    // Optional: Set npm cache to workspace
-        NPM_CONFIG_CACHE = "${env.WORKSPACE}\\.npm_cache"
+    NPM_CONFIG_CACHE = "${WORKSPACE}\\.npm_cache"
     }
 
     stages {
-    stage('Checkout SCM') {
+    stage('Checkout') {
       steps {
-        checkout scm
+        git branch: 'main', url: 'https://github.com/shadenplays/ToDoList.git'
             }
         }
 
         stage('Install Dependencies') {
       steps {
-        // Ensure npm cache directory exists
-                bat """
-                if not exist "%NPM_CONFIG_CACHE%" mkdir "%NPM_CONFIG_CACHE%"
-                npm config set cache "%NPM_CONFIG_CACHE%"
+        bat """
+                if not exist "${env.NPM_CONFIG_CACHE}" mkdir "${env.NPM_CONFIG_CACHE}"
+                npm config set cache "${env.NPM_CONFIG_CACHE}"
                 npm install
                 """
             }
@@ -32,36 +30,44 @@ pipeline {
 
         stage('Test') {
       steps {
-        echo 'Running tests (none yet)...'
-                // Add test commands here if needed, e.g. `npm test`
+        echo "Running tests (none yet)..."
             }
         }
 
         stage('Archive Build') {
       steps {
-        archiveArtifacts artifacts: 'out/**/*', allowEmptyArchive: true
+        archiveArtifacts artifacts: 'out/**/*', allowEmptyArchive: false
             }
         }
 
+        // ✅ Put it here, inside stages
         stage('Prod Server Instrumentation') {
       steps {
-        echo 'Collecting prod server stats...'
-                // CPU load
-                bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
-                // Memory
-                bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
-                // Disk space
-                bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
-            }
-        }
+        echo "Collecting prod server stats..."
+
+        // CPU usage
+        bat 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
+
+        // Memory usage
+        bat 'powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
+
+        // Disk usage
+        bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
+        // Use full PowerShell path
+        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
+        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
+        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
+    }
+}
+
     }
 
     post {
     success {
-      echo '✔ Build successful!'
+      echo "✔ Build successful!"
         }
         failure {
-      echo '❌ Build failed!'
+      echo "❌ Build failed!"
         }
     }
 }
