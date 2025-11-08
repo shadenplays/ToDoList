@@ -44,11 +44,17 @@ pipeline {
         stage('Prod Server Instrumentation') {
       steps {
         echo "Collecting prod server stats..."
-                bat 'wmic cpu get loadpercentage'
-                bat 'wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /Value'
-                bat 'wmic logicaldisk get size,freespace,caption'
-            }
-        }
+
+        // CPU usage
+        bat 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
+
+        // Memory usage
+        bat 'powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
+
+        // Disk usage
+        bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
+    }
+}
     }
 
     post {
