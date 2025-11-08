@@ -3,6 +3,8 @@ pipeline {
 
     environment {
     NPM_CACHE = "${WORKSPACE}\\.npm_cache"
+        APP_DIR = "${WORKSPACE}\\my-electron-app"
+        PROD_DIR = "C:\\prod_app"
     }
 
     stages {
@@ -14,54 +16,54 @@ pipeline {
 
         stage('Install Dependencies') {
       steps {
-        bat '''
+        bat """
                     echo Installing dependencies...
                     if not exist "%NPM_CACHE%" mkdir "%NPM_CACHE%"
                     npm config set cache "%NPM_CACHE%"
-                    cd my-electron-app
+                    cd "%APP_DIR%"
                     npm install
-                '''
+                """
             }
         }
 
         stage('Build') {
       steps {
-        bat '''
+        bat """
                     echo Building Electron app...
-                    cd my-electron-app
+                    cd "%APP_DIR%"
                     npx electron-vite build
-                '''
+                """
             }
         }
 
         stage('Deploy to Prod') {
       steps {
-        bat '''
+        bat """
                     echo Deploying app to production...
-                    if not exist "C:\\prod_app" mkdir "C:\\prod_app"
-                    robocopy "my-electron-app\\dist" "C:\\prod_app" /MIR
-                '''
+                    if not exist "%PROD_DIR%" mkdir "%PROD_DIR%"
+                    robocopy "%APP_DIR%\\dist" "%PROD_DIR%" /MIR
+                """
             }
         }
 
         stage('Verify Deployment') {
       steps {
-        bat '''
+        bat """
                     echo Verifying deployment...
-                    dir "C:\\prod_app"
-                '''
+                    dir "%PROD_DIR%"
+                """
                 echo 'Deployment verified!'
             }
         }
 
         stage('Prod Server Instrumentation') {
       steps {
-        bat '''
+        bat """
                     echo Collecting prod server stats...
                     powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"
                     powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"
                     powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"
-                '''
+                """
             }
         }
     }
