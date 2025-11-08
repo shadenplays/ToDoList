@@ -3,14 +3,19 @@ pipeline {
 
     environment {
     NPM_CACHE = "${WORKSPACE}\\.npm_cache"
+        LOCAL_PROJECT = "C:\\Users\\user\\WebstormProjects\\ToDoListApp\\my-electron-app"
         APP_DIR = "${WORKSPACE}\\my-electron-app"
         PROD_DIR = "C:\\prod_app"
     }
 
     stages {
-    stage('Checkout SCM') {
+    stage('Prepare Workspace') {
       steps {
-        git branch: 'main', url: 'https://github.com/shadenplays/ToDoList.git'
+        bat """
+                    echo Copying local Electron project to Jenkins workspace...
+                    if exist "%APP_DIR%" rmdir /S /Q "%APP_DIR%"
+                    xcopy /E /I /Y "%LOCAL_PROJECT%" "%APP_DIR%"
+                """
             }
         }
 
@@ -36,33 +41,18 @@ pipeline {
             }
         }
 
+        stage('Archive Build') {
+      steps {
+        archiveArtifacts artifacts: "${APP_DIR}\\dist\\**\\*.*", allowEmptyArchive: false
+            }
+        }
+
         stage('Deploy to Prod') {
       steps {
         bat """
-                    echo Deploying app to production...
+                    echo Deploying to production...
                     if not exist "%PROD_DIR%" mkdir "%PROD_DIR%"
-                    robocopy "%APP_DIR%\\dist" "%PROD_DIR%" /MIR
-                """
-            }
-        }
-
-        stage('Verify Deployment') {
-      steps {
-        bat """
-                    echo Verifying deployment...
-                    dir "%PROD_DIR%"
-                """
-                echo 'Deployment verified!'
-            }
-        }
-
-        stage('Prod Server Instrumentation') {
-      steps {
-        bat """
-                    echo Collecting prod server stats...
-                    powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"
-                    powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"
-                    powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"
+                    xcopy /Y /E "%APP_DIR%\\dist" "%PROD_DIR%"
                 """
             }
         }
@@ -70,10 +60,10 @@ pipeline {
 
     post {
     success {
-      echo '✔ Build, deploy, and verification successful!'
+      echo "Build and deployment completed successfully!"
         }
         failure {
-      echo '❌ Build or deployment failed! Check logs above.'
+      echo "Build or deployment failed! Check logs above."
         }
     }
 }
