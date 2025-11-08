@@ -1,20 +1,26 @@
 pipeline {
   agent any
 
+    environment {
+    // Optional: Set npm cache to workspace
+        NPM_CONFIG_CACHE = "${env.WORKSPACE}\\.npm_cache"
+    }
+
     stages {
-    stage('Checkout') {
+    stage('Checkout SCM') {
       steps {
-        git branch: 'main', url: 'https://github.com/shadenplays/ToDoList'
+        checkout scm
             }
         }
 
         stage('Install Dependencies') {
       steps {
-        bat '''
-                if not exist ".npm_cache" mkdir ".npm_cache"
-                npm config set cache ".npm_cache"
+        // Ensure npm cache directory exists
+                bat """
+                if not exist "%NPM_CONFIG_CACHE%" mkdir "%NPM_CONFIG_CACHE%"
+                npm config set cache "%NPM_CONFIG_CACHE%"
                 npm install
-                '''
+                """
             }
         }
 
@@ -27,6 +33,7 @@ pipeline {
         stage('Test') {
       steps {
         echo 'Running tests (none yet)...'
+                // Add test commands here if needed, e.g. `npm test`
             }
         }
 
@@ -39,38 +46,19 @@ pipeline {
         stage('Prod Server Instrumentation') {
       steps {
         echo 'Collecting prod server stats...'
-
+                // CPU load
                 bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
+                // Memory
                 bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
+                // Disk space
                 bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
-            }
-        }
-
-        stage('Deploy to Prod') {
-      steps {
-        echo 'Deploying app to production...'
-
-        bat '''
-        if not exist "C:\\prod_app" mkdir "C:\\prod_app"
-        "C:\\Windows\\System32\\xcopy.exe" /Y /E "out\\*" "C:\\prod_app\\"
-        '''
-
-        // Optional: launch the app
-        bat 'start "" "C:\\prod_app\\yourAppName.exe"'
-    }
-}
-
-        stage('Verify Deployment') {
-      steps {
-        echo 'Verifying production app...'
-                bat 'tasklist | findstr /I "yourAppName.exe"'
             }
         }
     }
 
     post {
     success {
-      echo '✅ Build successful!'
+      echo '✔ Build successful!'
         }
         failure {
       echo '❌ Build failed!'
