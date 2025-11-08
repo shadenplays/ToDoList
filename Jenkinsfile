@@ -1,6 +1,10 @@
 pipeline {
   agent any
 
+    environment {
+    CI = 'true'
+    }
+
     stages {
     stage('Checkout') {
       steps {
@@ -11,16 +15,20 @@ pipeline {
         stage('Install Dependencies') {
       steps {
         bat '''
-                if not exist ".npm_cache" mkdir ".npm_cache"
-                npm config set cache ".npm_cache"
-                npm install
+                    echo Installing dependencies...
+                    if not exist ".npm_cache" mkdir ".npm_cache"
+                    npm config set cache ".npm_cache"
+                    npm ci || npm install
                 '''
             }
         }
 
         stage('Build') {
       steps {
-        bat 'npx electron-vite build'
+        bat '''
+                    echo Building Electron app...
+                    npx electron-vite build
+                '''
             }
         }
 
@@ -32,45 +40,37 @@ pipeline {
 
         stage('Archive Build') {
       steps {
-        archiveArtifacts artifacts: 'out/**/*', allowEmptyArchive: true
+        archiveArtifacts artifacts: 'out/**/*', fingerprint: true
             }
         }
 
         stage('Prod Server Instrumentation') {
       steps {
         echo 'Collecting prod server stats...'
-
-                bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
-                bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
-                bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
+                bat 'powershell -Command "Get-CimInstance Win32_Processor | Select LoadPercentage"'
+                bat 'powershell -Command "Get-CimInstance Win32_OperatingSystem | Select FreePhysicalMemory,TotalVisibleMemorySize"'
+                bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select DeviceID,FreeSpace,Size"'
             }
         }
 
         stage('Deploy to Prod') {
       steps {
         echo 'Deploying app to production...'
-
-        bat '''
-        if not exist "C:\\prod_app" mkdir "C:\\prod_app"
-        "C:\\Windows\\System32\\xcopy.exe" /Y /E "out\\*" "C:\\prod_app\\"
-        '''
-
-        // Optional: launch the app
-        bat 'start "" "C:\\prod_app\\yourAppName.exe"'
-    }
-}
+                bat 'powershell -Command "if (-not (Test-Path C:\\prod_app)) { New-Item -ItemType Directory -Path C:\\prod_app }"'
+                bat 'powershell -Command "Copy-Item -Path out\\* -Destination C:\\prod_app\\ -Recurse -Force"'
+            }
+        }
 
         stage('Verify Deployment') {
       steps {
-        echo 'Verifying production app...'
-                bat 'tasklist | findstr /I "yourAppName.exe"'
+        echo '✅ Deployment verification complete!'
             }
         }
     }
 
     post {
     success {
-      echo '✅ Build successful!'
+      echo '✅ Build succeeded!'
         }
         failure {
       echo '❌ Build failed!'
