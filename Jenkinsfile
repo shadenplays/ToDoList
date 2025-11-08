@@ -50,6 +50,31 @@ pipeline {
         bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
         bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
     }
+
+    stage('Deploy to Prod') {
+        steps {
+          echo "Deploying app to production..."
+        // Copy the latest build to a production folder
+        bat """
+        if not exist "C:\\prod_app" mkdir "C:\\prod_app"
+        xcopy /Y /E "out\\*.*" "C:\\prod_app\\"
+        """
+
+        // Optional: launch the app (simulate production run)
+        bat """
+        start "" "C:\\prod_app\\ToDoList.exe"
+        timeout /t 5
+        """
+    }
+}
+
+stage('Verify Deployment') {
+        steps {
+          echo "Verifying production app status..."
+        bat 'tasklist | findstr /I "ToDoList.exe"'
+    }
+}
+
 }
 
     }
