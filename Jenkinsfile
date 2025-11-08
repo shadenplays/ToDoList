@@ -2,64 +2,65 @@ pipeline {
   agent any
 
     environment {
-    NPM_CONFIG_CACHE = "${WORKSPACE}\\.npm_cache"
+    // Local npm cache to avoid permission issues
+        NPM_CONFIG_CACHE = "${WORKSPACE}\\.npm_cache"
     }
 
     stages {
-    stage('Checkout') {
+    // ------------------------
+        stage('Checkout') {
       steps {
         git branch: 'main', url: 'https://github.com/shadenplays/ToDoList.git'
             }
         }
 
+        // ------------------------
         stage('Install Dependencies') {
       steps {
-        bat """
-                if not exist "${env.NPM_CONFIG_CACHE}" mkdir "${env.NPM_CONFIG_CACHE}"
-                npm config set cache "${env.NPM_CONFIG_CACHE}"
-                npm install
-                """
+        // Ensure local npm cache exists and use it
+                bat "if not exist \"${env.NPM_CONFIG_CACHE}\" mkdir \"${env.NPM_CONFIG_CACHE}\""
+                bat "npm config set cache \"${env.NPM_CONFIG_CACHE}\""
+                bat "npm install"
             }
         }
 
+        // ------------------------
         stage('Build') {
       steps {
-        bat 'npx electron-vite build'
+        bat "npx electron-vite build"
             }
         }
 
+        // ------------------------
         stage('Test') {
       steps {
         echo "Running tests (none yet)..."
             }
         }
 
+        // ------------------------
         stage('Archive Build') {
       steps {
-        archiveArtifacts artifacts: 'out/**/*', allowEmptyArchive: false
+        // Archive the build output; fail if nothing found
+                archiveArtifacts artifacts: 'out/**/*', allowEmptyArchive: false
             }
         }
 
-        // ✅ Put it here, inside stages
+        // ------------------------
         stage('Prod Server Instrumentation') {
       steps {
         echo "Collecting prod server stats..."
 
-        // CPU usage
-        bat 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
+                // CPU usage
+                bat 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage | Out-String"'
 
-        // Memory usage
-        bat 'powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
+                // Memory usage
+                bat 'powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize | Out-String"'
 
-        // Disk usage
-        bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
-        // Use full PowerShell path
-        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
-        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
-        bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
-    }
-}
-
+                // Disk usage
+                bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size | Out-String"'
+            }
+        }
     }
 
     post {
