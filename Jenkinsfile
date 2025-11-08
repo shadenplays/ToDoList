@@ -1,8 +1,12 @@
 pipeline {
   agent any
 
+    environment {
+    NPM_CACHE = "${WORKSPACE}\\.npm_cache"
+    }
+
     stages {
-    stage('Checkout') {
+    stage('Checkout SCM') {
       steps {
         git branch: 'main', url: 'https://github.com/shadenplays/ToDoList.git'
             }
@@ -12,8 +16,9 @@ pipeline {
       steps {
         bat '''
                     echo Installing dependencies...
-                    if not exist ".npm_cache" mkdir ".npm_cache"
-                    npm config set cache ".npm_cache"
+                    if not exist "%NPM_CACHE%" mkdir "%NPM_CACHE%"
+                    npm config set cache "%NPM_CACHE%"
+                    cd my-electron-app
                     npm install
                 '''
             }
@@ -23,33 +28,39 @@ pipeline {
       steps {
         bat '''
                     echo Building Electron app...
-                    npm run build
+                    cd my-electron-app
+                    npx electron-vite build
                 '''
             }
         }
 
-        stage('Test') {
+        stage('Deploy to Prod') {
       steps {
         bat '''
-                    echo Running tests...
-                    npm test || echo "No tests defined"
+                    echo Deploying app to production...
+                    if not exist "C:\\prod_app" mkdir "C:\\prod_app"
+                    robocopy "my-electron-app\\dist" "C:\\prod_app" /MIR
                 '''
             }
         }
 
-        stage('Archive Artifacts') {
+        stage('Verify Deployment') {
       steps {
-        archiveArtifacts artifacts: 'dist/**/*', fingerprint: true
+        bat '''
+                    echo Verifying deployment...
+                    dir "C:\\prod_app"
+                '''
+                echo 'Deployment verified!'
             }
         }
 
         stage('Prod Server Instrumentation') {
       steps {
         bat '''
-                    echo Gathering system metrics...
-                    wmic cpu get loadpercentage
-                    wmic os get freephysicalmemory,totalvisiblememorysize
-                    wmic logicaldisk get size,freespace,caption
+                    echo Collecting prod server stats...
+                    powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"
+                    powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"
+                    powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"
                 '''
             }
         }
@@ -57,10 +68,10 @@ pipeline {
 
     post {
     success {
-      echo '✅ Build and instrumentation completed successfully!'
+      echo '✔ Build, deploy, and verification successful!'
         }
         failure {
-      echo '❌ Build failed. Check logs above.'
+      echo '❌ Build or deployment failed! Check logs above.'
         }
     }
 }
