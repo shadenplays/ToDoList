@@ -54,4 +54,18 @@ pipeline {
       echo "❌ Build failed!"
         }
     }
+    stage('Prod Server Instrumentation') {
+    steps {
+      echo "Collecting prod server stats..."
+
+        // CPU usage
+        bat 'wmic cpu get loadpercentage'
+
+        // Memory usage
+        bat 'wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /Value'
+
+        // Disk usage
+        bat 'wmic logicaldisk get size,freespace,caption'
+    }
+ }
 }
