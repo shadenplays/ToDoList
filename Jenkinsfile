@@ -50,16 +50,15 @@ pipeline {
       steps {
         echo 'Deploying app to production...'
 
-                // Copy build output to a "production" folder
-                bat '''
-                if not exist "C:\\prod_app" mkdir "C:\\prod_app"
-                xcopy /Y /E "out\\*" "C:\\prod_app\\"
-                '''
+        bat '''
+        if not exist "C:\\prod_app" mkdir "C:\\prod_app"
+        "C:\\Windows\\System32\\xcopy.exe" /Y /E "out\\*" "C:\\prod_app\\"
+        '''
 
-                // Optional: launch the built EXE to simulate deployment
-                bat 'start "" "C:\\prod_app\\yourAppName.exe"'
-            }
-        }
+        // Optional: launch the app
+        bat 'start "" "C:\\prod_app\\yourAppName.exe"'
+    }
+}
 
         stage('Verify Deployment') {
       steps {
