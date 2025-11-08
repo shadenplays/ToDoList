@@ -4,8 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/shadenplays/ToDoList.git'
+                git branch: 'main', url: 'https://github.com/shadenplays/ToDoList.git'
             }
         }
 
@@ -24,23 +23,23 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running tests (none yet)...'
-                // You can later add: bat 'npm test'
             }
         }
 
         stage('Archive Build') {
             steps {
-                archiveArtifacts artifacts: 'dist/**/*', fingerprint: true
+                // Change this line to match your actual build output directory
+                archiveArtifacts 'out/**/*'
             }
         }
     }
 
     post {
-        success {
-            echo '✅ Build succeeded!'
-        }
         failure {
             echo '❌ Build failed!'
+        }
+        success {
+            echo '✅ Build successful!'
         }
     }
 }
