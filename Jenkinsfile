@@ -15,9 +15,9 @@ pipeline {
         stage('Install Dependencies') {
       steps {
         bat """
-                    if not exist "${env.NPM_CONFIG_CACHE}" mkdir "${env.NPM_CONFIG_CACHE}"
-                    npm config set cache "${env.NPM_CONFIG_CACHE}"
-                    npm install
+                if not exist "${env.NPM_CONFIG_CACHE}" mkdir "${env.NPM_CONFIG_CACHE}"
+                npm config set cache "${env.NPM_CONFIG_CACHE}"
+                npm install
                 """
             }
         }
@@ -40,14 +40,21 @@ pipeline {
             }
         }
 
+        // ✅ Put it here, inside stages
         stage('Prod Server Instrumentation') {
       steps {
         echo "Collecting prod server stats..."
-                bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
-                bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
-                bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
-            }
-        }
+
+        // CPU usage
+        bat 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object LoadPercentage"'
+
+        // Memory usage
+        bat 'powershell -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize"'
+
+        // Disk usage
+        bat 'powershell -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size"'
+    }
+}
     }
 
     post {
@@ -59,3 +66,4 @@ pipeline {
         }
     }
 }
+
