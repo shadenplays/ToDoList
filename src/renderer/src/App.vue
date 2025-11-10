@@ -124,7 +124,7 @@ const stats = computed(() => ({
           />
           <button
             @click="addTodo"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors"
+            class="bg-red-700 hover:bg-red-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors"
           >
             <Plus :size="20" />
             Add

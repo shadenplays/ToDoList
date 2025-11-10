@@ -13,7 +13,7 @@ pipeline {
         git branch: 'main', url: 'https://github.com/shadenplays/ToDoList.git'
             }
         }
-
+      //Clones the repository from your GitHub project’s main branch.
         // ------------------------
         stage('Install Dependencies') {
       steps {
@@ -21,6 +21,11 @@ pipeline {
                 bat "if not exist \"${env.NPM_CONFIG_CACHE}\" mkdir \"${env.NPM_CONFIG_CACHE}\""
                 bat "npm config set cache \"${env.NPM_CONFIG_CACHE}\""
                 bat "npm install"
+                //Checks if the .npm_cache folder exists, and creates it if missing.
+                //
+                //Configures npm to use that cache folder.
+                //
+                //Installs all Node.js dependencies listed in package.json.
             }
         }
 
@@ -43,6 +48,7 @@ pipeline {
       steps {
         // Archive the build output; fail if nothing found
                 archiveArtifacts artifacts: 'out/**/*', allowEmptyArchive: false
+        //Archives build output files (e.g., from out/) so they are stored in Jenkins and can be downloaded later.
             }
         }
 
@@ -55,6 +61,7 @@ pipeline {
         bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize | Out-String"'
         bat '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID,FreeSpace,Size | Out-String"'
     }
+    //Collects basic system performance and hardware stats from the Jenkins build server using PowerShell commands.
 }
     }
 
